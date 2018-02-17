@@ -16,6 +16,7 @@
 #include "Worlds.hpp"
 #include "Meshes.hpp"
 #include "Actors.hpp"
+#include "Lights.hpp"
 #include "Cameras.hpp"
 #include "Transformations.hpp"
 
@@ -34,18 +35,22 @@ int main(int argc, char** argv)
     
     
     //Create the main character
-    Character* MainCharacter = new Plane(new Model(new Mesh("bench.obj"), ScaleMatrix(0.f,0.f,0.f)));
+    Character* MainCharacter = new Plane(new Model(new Mesh(), ScaleMatrix(0.f,0.f,0.f)));
     
     
     
     
     
     //Initialize and register the first model
-    World::RegisterActor(new Model(new Mesh("bench.obj"), TranslationMatrix(4.f,0.f,0.f)));
+    World::RegisterActor(new Model(new Mesh(), TranslationMatrix(50.f,0.f,0.f)));
     
-    //Initialize the second model
-    World::RegisterActor(new Model(new Mesh("bench.obj"), TranslationMatrix(8.f,0.f,0.f)));
     
+    
+    
+    //Fiat lux.
+    World::RegisterLight(CreatePointLight(glm::vec4(0.f,0.f,0.f,1.f), glm::vec3(0.f,0.f,1.f)));
+    World::RegisterLight(CreatePointLight(glm::vec4(100.f,1.f,0.f,1.f), glm::vec3(1.f,0.f,0.f)));
+    printf("%lu\n", sizeof(bool));
     //Run the main loop
     glutMainLoop();
     

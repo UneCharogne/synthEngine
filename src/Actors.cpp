@@ -9,6 +9,7 @@
 #include "Worlds.hpp"
 #include "Actors.hpp"
 #include "Meshes.hpp"
+#include "Textures.hpp"
 #include "Transformations.hpp"
 #include "Cameras.hpp"
 
@@ -35,6 +36,8 @@ Model::Model(void) : Actor()
 {
     this->ModelMesh = new Mesh();
     
+    this->ModelTexture = new Texture2D();
+    
     this->ModelTransform = glm::mat4(1.f);
     
     this->IsVisible = true;
@@ -46,6 +49,22 @@ Model::Model(void) : Actor()
 Model::Model(Mesh *modelmesh) : Actor()
 {
     this->ModelMesh = modelmesh;
+    
+    this->ModelTexture = new Texture2D();
+    
+    this->ModelTransform = glm::mat4(1.f);
+    
+    this->IsVisible = true;
+}
+
+
+
+
+Model::Model(Mesh *modelmesh, Texture2D *modeltexture) : Actor()
+{
+    this->ModelMesh = modelmesh;
+    
+    this->ModelTexture = modeltexture;
     
     this->ModelTransform = glm::mat4(1.f);
     
@@ -59,6 +78,22 @@ Model::Model(Mesh *modelmesh, glm::mat4 modeltransform) : Actor()
 {
     this->ModelMesh = modelmesh;
     
+    this->ModelTexture = new Texture2D();
+    
+    this->ModelTransform = modeltransform;
+    
+    this->IsVisible = true;
+}
+
+
+
+
+Model::Model(Mesh *modelmesh, Texture2D *modeltexture, glm::mat4 modeltransform) : Actor()
+{
+    this->ModelMesh = modelmesh;
+    
+    this->ModelTexture = modeltexture;
+    
     this->ModelTransform = modeltransform;
     
     this->IsVisible = true;
@@ -68,6 +103,7 @@ Model::Model(Mesh *modelmesh, glm::mat4 modeltransform) : Actor()
 
 void Model::SetMesh(Mesh *modelmesh)
 {
+    delete this->ModelMesh;
     this->ModelMesh = modelmesh;
 }
 
@@ -76,6 +112,21 @@ void Model::SetMesh(Mesh *modelmesh)
 Mesh* Model::GetMesh(void)
 {
     return this->ModelMesh;
+}
+
+
+
+void Model::SetTexture(Texture2D *modeltexture)
+{
+    delete this->ModelTexture;
+    this->ModelTexture = modeltexture;
+}
+
+
+
+Texture2D* Model::GetTexture(void)
+{
+    return this->ModelTexture;
 }
 
 
@@ -190,8 +241,14 @@ void Model::onDisplay(int currentTime)
         //Send the model's transformation to the buffer
         glUniformMatrix4fv(World::GetModelTransformationMatrix(), 1, GL_FALSE, &(TransformationMatrix[0][0]));
         
-        //And draw the model
+        //Bind the model's texture to the shader
+        this->GetTexture()->Bind();
+        
+        //Draw the model
         this->GetMesh()->Draw();
+        
+        //And unbind the texture
+        this->GetTexture()->Unbind();
     }
 }
 

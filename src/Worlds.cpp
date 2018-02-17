@@ -11,6 +11,7 @@
 
 #include "Worlds.hpp"
 #include "Shaders.hpp"
+#include "Lights.hpp"
 #include "Cameras.hpp"
 #include "Actors.hpp"
 
@@ -23,6 +24,7 @@
 
 #define VERTEX_SHADER_URL "shaders/nop.vert.glsl"
 #define FRAGMENT_SHADER_URL "shaders/nop.frag.glsl"
+#define LIGHT_SOURCES_NAME "LightSources"
 #define PROJECTION_MATRIX_NAME "ProjectionMatrix"
 #define MODEL_VIEW_MATRIX_NAME "ModelViewMatrix"
 #define MODEL_TRANSFORMATION_MATRIX_NAME "ModelTransformationMatrix"
@@ -39,11 +41,18 @@ GLuint World::ProjectionMatrix = -1;
 GLuint World::ModelViewMatrix = -1;
 GLuint World::ModelTransformationMatrix = -1;
 
+GLuint World::LightSourcesIndex = -1;
+GLuint World::LightSourcesBindingPoint = -1;
+GLuint World::LightSourcesBuffer = -1;
+
 bool World::FirstMouseMovement = true;
 bool World::PerspectiveChanged = false;
+bool World::LightsChanged = true;
 
 std::vector<glm::vec4> World::BackgroundColors = std::vector<glm::vec4>();
 int World::activeBackgroundColor = -1;
+
+std::vector<Light*> World::Lights = std::vector<Light*>();
 
 Camera* World::DefaultCamera = new Camera();
 Camera* World::ActiveCamera = NULL;
@@ -107,18 +116,33 @@ void World::InitializeWorld(int *argc, char** argv)
     glDeleteShader(FragmentShader);
     
     
-    //Get the attributes
+    //Get the attributes for the matrices
     World::ProjectionMatrix = glGetUniformLocation(World::RenderProgram, PROJECTION_MATRIX_NAME);
     World::ModelViewMatrix = glGetUniformLocation(World::RenderProgram, MODEL_VIEW_MATRIX_NAME);
     World::ModelTransformationMatrix = glGetUniformLocation(World::RenderProgram, MODEL_TRANSFORMATION_MATRIX_NAME);
     
     
+    //Get the index of the uniform buffer block in the fragment shader
+    if((World::LightSourcesIndex = glGetUniformBlockIndex(World::RenderProgram, LIGHT_SOURCES_NAME)) == GL_INVALID_INDEX) {
+        std::cout << "Error locating the block " << LIGHT_SOURCES_NAME << " in the fragment shader, program will be arrested.\n";
+        exit(EXIT_FAILURE);
+    }
+    //And its binding point
+    glUniformBlockBinding(World::RenderProgram, World::LightSourcesIndex, World::LightSourcesBindingPoint);
+    //Then, generate the buffer for the light sources
+    glGenBuffers(1, &(World::LightSourcesBuffer));
+    
+    
     //Enable depth test
     glEnable(GL_DEPTH_TEST);
     
+    //Enable blending
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
     
     //Set the starting background
-    World::RegisterBackgroundColor(glm::vec4(0.2f,0.f,0.f,0.2f));
+    World::RegisterBackgroundColor(glm::vec4(0.f,0.f,0.f,0.f));
     glClearColor(World::BackgroundColors[activeBackgroundColor].r, World::BackgroundColors[activeBackgroundColor].g, World::BackgroundColors[activeBackgroundColor].b, World::BackgroundColors[activeBackgroundColor].a);
     
     //Activate the camera
@@ -142,6 +166,33 @@ void World::RegisterBackgroundColor(glm::vec4 BackgroundColorToRegister)
 {
     World::BackgroundColors.push_back(BackgroundColorToRegister);
     World::activeBackgroundColor++;
+}
+
+
+
+void World::RegisterLight(Light* LightToRegister)
+{
+    World::Lights.push_back(LightToRegister);
+    World::LightsChanged = true;
+}
+
+
+
+
+void World::DeregisterLight(Light* LightToDeregister)
+{
+    std::vector<Light*>::iterator light;
+    std::vector<Light*>::iterator lighttoerase;
+    for(light=World::Lights.begin();light!=World::Lights.end();light++)
+    {
+        if((*light) == LightToDeregister)
+        {
+            lighttoerase = light;
+        }
+    }
+    World::Lights.erase(lighttoerase);
+    
+    World::LightsChanged = true;
 }
 
 
@@ -176,7 +227,7 @@ void World::DeregisterActor(Actor* ActorToDeregister)
 {
     std::set<Actor*>::iterator actor;
     std::set<Actor*>::iterator actortoerase;
-    for(actor=World::Actors.begin();actor!=Actors.end();actor++)
+    for(actor=World::Actors.begin();actor!=World::Actors.end();actor++)
     {
         if((*actor) == ActorToDeregister)
         {
@@ -255,7 +306,36 @@ void World::onDisplay()
     
     
     //Reset the view
+    glClearColor(World::BackgroundColors[activeBackgroundColor].r, World::BackgroundColors[activeBackgroundColor].g, World::BackgroundColors[activeBackgroundColor].b, World::BackgroundColors[activeBackgroundColor].a);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    
+    //Eventually update the lights
+    if(World::LightsChanged)
+    {
+        //TODO
+        //Build the lights buffer object
+        Light LightSources[MAX_N_LIGHTS];
+        
+        int i=0;
+        while((i < MAX_N_LIGHTS) && (i < World::Lights.size())) {
+            LightSources[i] = *(World::Lights[i]);
+            i++;
+        }
+        while((i < MAX_N_LIGHTS)) {
+            LightSources[i] = NullLight;
+            i++;
+        }
+        
+        //Send it to the shader
+        glBindBuffer(GL_UNIFORM_BUFFER, World::LightSourcesBuffer);
+        glBufferData(GL_UNIFORM_BUFFER, (MAX_N_LIGHTS * sizeof(Light)), LightSources, GL_STATIC_DRAW);
+        glBindBufferBase(GL_UNIFORM_BUFFER, World::LightSourcesIndex, World::LightSourcesBuffer);
+        
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+        
+        World::LightsChanged = false;
+    }
     
     
     //Eventually update the perspective matrix
