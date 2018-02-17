@@ -22,6 +22,7 @@
 
 //Forward declarations
 class Mesh;
+class Texture2D;
 class Camera;
 
 
@@ -61,10 +62,11 @@ public:
 
 
 
-//A model is an actor with a mesh and a transformation
+//A model is an actor with a mesh, a texture and a transformation
 class Model : public Actor
 {
     Mesh* ModelMesh;
+    Texture2D* ModelTexture;
     glm::mat4 ModelTransform;
     
     bool IsVisible;
@@ -75,10 +77,14 @@ public:
     Model(void);
     Model(Mesh *modelmesh);
     Model(Mesh *modelmesh, glm::mat4 modeltransform);
+    Model(Mesh *modelmesh, Texture2D *modeltexture);
+    Model(Mesh *modelmesh, Texture2D *modeltexture, glm::mat4 modeltransform);
     
     //Set and get methods
     void SetMesh(Mesh *modelmesh);
     Mesh* GetMesh(void);
+    void SetTexture(Texture2D *modeltexture);
+    Texture2D* GetTexture(void);
     void SetTransform(glm::mat4 modeltransform);
     glm::mat4 GetTransform(void);
     void SetVisibility(bool isVisible);

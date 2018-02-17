@@ -21,6 +21,7 @@
 
 
 //Forward declarations
+class Light;
 class Camera;
 class Actor;
 
@@ -41,14 +42,22 @@ class World
         static GLuint ProjectionMatrix;
         static GLuint ModelViewMatrix;
         static GLuint ModelTransformationMatrix;
+        //Uniform block for lights
+        static GLuint LightSourcesIndex;
+        static GLuint LightSourcesBindingPoint;
+        static GLuint LightSourcesBuffer;
     
         //flags
         static bool FirstMouseMovement;
         static bool PerspectiveChanged;
+        static bool LightsChanged;
     
         //Background
         static std::vector<glm::vec4> BackgroundColors;
         static int activeBackgroundColor;
+    
+        //Lights
+        static std::vector<Light*> Lights;
     
         //Cameras
         static Camera* DefaultCamera;
@@ -74,6 +83,12 @@ class World
     
         //Background registration
         static void RegisterBackgroundColor(glm::vec4);
+    
+    
+        //Light registration and deregistration
+        static void RegisterLight(Light* LightToRegister);
+        static void DeregisterLight(Light *LightToDeregister);
+        static void UpdateLights(void);
     
         //Camera activation and deactivation
         static void ActivateCamera(Camera* CameraToActivate);

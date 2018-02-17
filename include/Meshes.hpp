@@ -21,7 +21,7 @@
 #define N_BUFFERS 4
 enum BUFFERS { VERTEX_BUFFER, TEXCOORD_BUFFER, NORMAL_BUFFER, INDEX_BUFFER };
 
-#define DEFAULT_MESH_PATH "blabla"
+#define DEFAULT_MESH_PATH "resources/meshes/default_mesh.obj"
 
 
 
